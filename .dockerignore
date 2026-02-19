@@ -1,0 +1,54 @@
+# --- Version Control ---
+.git
+.gitignore
+
+# --- Python & Virtual Environments ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.ruff_cache/
+.ipynb_checkpoints/
+venv/
+env/
+
+# --- Environment & Secrets ---
+.env
+
+# --- Airflow ---
+airflow/
+airflow.*
+logs/
+simple_auth_manager_passwords.json.generated
+
+# --- Data & Models (Heavy Files) ---
+data/reference_data.csv
+data/bitcoin_data_processed.csv
+models/
+volatility_models/
+*.pkl
+mlruns/
+mlflow.db
+
+# --- Notebooks, Docs & Theory ---
+notebooks/
+documents/
+theory/
+images/
+README.md
+
+# --- Deployment Artifacts & Logs ---
+deployment_info.json
+docker_image_uri.json
+elasticbeanstalk_info.json
+*.zip
+*.tar.gz
+
+# --- OS & IDE Files ---
+.DS_Store
+.idea/
+.vscode/
+
+# --- Other ---
+requirements.txt

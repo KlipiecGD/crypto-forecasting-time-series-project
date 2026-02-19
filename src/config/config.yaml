@@ -1,0 +1,146 @@
+# Historical data configuration
+historical_data:
+  kaggle_dataset: "adilshamim8/bitcoin-historical-data" # Kaggle dataset identifier for Bitcoin historical data
+  download_dir: "data/" # Directory where the historical data will be downloaded and saved
+  file_path: "data/Bitcoin_history_data.csv" # This is the path to the historical data CSV file.
+  data_start: "2014-09-17" # Start date for the historical data in Kaggle dataset 
+
+# Forecast configuration for the model
+forecast:
+  default_horizon: 30 # Default number of days to forecast volatility for. 
+  min_horizon: 1 # Minimum forecast horizon (1 day)
+  max_horizon: 30 # Maximum forecast horizon (30 days)
+
+# API configuration for fetching live data
+live_data:
+  api_url: "https://api.binance.com/api/v3/klines" # Binance API endpoint for historical candlestick data
+  symbol: "BTCUSDT" # Trading pair for Bitcoin to USDT
+  interval: "1d" # Time interval for candlestick data (1 day)
+  limit: 91  # Number of data points to fetch (60 for past 60 days + 30 for max forecast range + 1 for current)
+  historical_data_buffer: 61 # Number of past days to include in the live data fetch to ensure we have enough data for feature engineering and forecasting
+  fetched_data_save_path: "data/live_data.csv" # Path to save the fetched live data for future reference
+
+# Data preprocessing and feature engineering pipeline configuration
+pipeline:
+  deploy_after_training: True # Whether to automatically deploy the model to SageMaker after training
+  optimize_hyperparameters: False # Whether to perform hyperparameter tuning using Optuna during training
+  n_trials: 100 # Number of Optuna trials for hyperparameter tuning if enabled
+  required_columns: ['Date', 'Open', 'High', 'Low', 'Close'] # Columns that must be present in the dataset for processing
+  transformations:
+    volatility:
+      main_window: 30 # Main window for volatility calculation (30 days)
+      lagged_features: [30] # Lagged features for volatility
+      rolling_windows: [30] # Rolling windows for volatility
+      change_windows: [30] # Change windows for volatility
+
+    features: ['Volatility_Class_Num',
+              'Parkinson_Volatility',
+              'Garman_Klass_Volatility',
+              'Roger_Satchel_Volatility',
+              'Volatility_Lag_30',
+              'Volatility_MA_30',
+              'Volatility_STD_30',
+              'Volatility_Change_30',] # List of features to be used for modeling
+
+# Model configuration
+model:
+  model_save_path: "models/volatility_model.joblib" # Path where the trained model will be saved
+  model_type: "Logistic Regression" # Type of model that was trained. This is just for documentation purposes and does not affect the code.
+
+  hyperparameters: 
+    C: 0.1 # Inverse of regularization strength for Logistic Regression
+    max_iter: 1000 # Maximum number of iterations for the solver to converge
+    class_weight: "balanced" # Class weight to handle class imbalance in Logistic Regression
+
+  thresholds:
+    Low: 0.40 # Threshold for classifying volatility as 'Low'
+    Normal: 0.65 # Threshold for classifying volatility as 'Normal'
+    # High is everything above Normal, so we don't need to specify it explicitly
+
+  class_names: ['Low', 'Normal', 'High'] # Names of the volatility classes
+
+  cv_splits: 5 # Number of splits for TimeSeriesSplit cross-validation during training for generating learning curves
+  plot_path: "learning_curve.png" # Path to save the learning curve plot generated during training
+
+  mapping: {
+    'Low': 0, 
+    'Normal': 1,
+    'High': 2
+  } # Mapping of volatility classes to numerical values for modeling
+
+  val_size: 0.15 # Proportion of the dataset to be used as the validation set during training
+  test_size: 0.15 # Proportion of the dataset to be used as the test set in final evaluation
+  verbose: True # Whether to print detailed evaluation metrics during training
+  random_seed: 2137 # Random seed for reproducibility
+
+# SageMaker deployment configuration
+sagemaker_deployment:
+  endpoint_name: "volatility-predictor" # Name of the SageMaker endpoint to be created for deployment
+  region: "us-east-1" # AWS region where the SageMaker endpoint will be deployed
+  model_output_path: "sagemaker_model.tar.gz" # Path where the model artifact will be saved for SageMaker deployment
+  image_name: "volatility-predictor" # Name of the Docker image for SageMaker deployment
+  dockerfile_dir: "src/sagemaker_deployment" # Directory containing the Dockerfile for SageMaker deployment
+  s3_prefix: "volatility-model" # S3 prefix for storing the model artifact
+  instance_type: "ml.t2.medium" # Instance type for the SageMaker endpoint
+  instance_count: 1 # Number of instances for the SageMaker endpoint
+  docker_image_uri_path: "docker_image_uri.json"
+  deployment_info_path: "deployment_info.json" # Path to save deployment information such as endpoint name and status after deployment
+  rebuild_image: True # Whether to force rebuild the Docker image during deployment. If False, it will check if an image with the same name already exists and reuse it.
+
+# Elastic Beanstalk deployment configuration
+elastic_beanstalk_deployment:
+  region: "eu-north-1" # AWS region where the Elastic Beanstalk environment will be deployed
+  app_name: "volatility-predictor-app" # Name of the Elastic Beanstalk application
+  env_name: "volatility-predictor-app-env" # Name of the Elastic Beanstalk environment
+  solution_stack: "64bit Amazon Linux 2023 v4.9.3 running Docker" # Solution stack for the Elastic Beanstalk environment
+  instance_profile: "testEC2Role" # IAM instance profile for the Elastic Beanstalk environment
+  instance_type: "t3.small" # EC2 instance type for the Elastic Beanstalk environment
+  s3_prefix: "volatility-predictor" # S3 prefix for storing application versions and deployment artifacts for Elastic Beanstalk"
+  aws_default_region: "us-east-1" # AWS region for Elastic Beanstalk resources
+  cloudwatch_region: "eu-north-1" # AWS region for CloudWatch logs
+  enable_cloud_logging: "true" # Whether to enable CloudWatch logging for the Elastic Beanstalk deployment
+  image_name: "volatility-predictor-streamlit" # Name of the Docker image for Elastic Beanstalk deployment
+  deployment_info_path: "elasticbeanstalk_info.json" # Path to save deployment information such as environment URL and status after deployment
+
+# Logging in AWS CloudWatch configuration
+logging:
+  log_group_prefix: "volatility-predictor" # Prefix for CloudWatch log groups
+
+# Mlflow configuration for experiment tracking
+mlflow:
+  experiment_name: "volatility_prediction" # Name of the MLflow experiment for tracking model training runs
+  default_model_name: "model" # Default name for the model when registering in MLflow Model Registry
+
+# Monitoring configuration for the deployed model
+monitoring:
+  performance_thresholds: {
+    "f1_macro": 0.4, # Threshold for macro F1 score to trigger an alert
+    "f1_weighted": 0.45, # Threshold for weighted F1 score to trigger an alert
+    "accuracy": 0.4 # Threshold for accuracy to trigger an alert
+  } # Performance thresholds for monitoring the deployed model. If the model's performance falls below any of these thresholds, an alert will be triggered.
+  evaluation_days: 180 # Number of recent days to evaluate the model's performance on for monitoring purposes
+  experiment_name: "volatility_monitoring" # Name of the MLflow experiment for tracking monitoring runs
+  verbose: True # Whether to print detailed information during monitoring runs
+  reference_data_path: "data/reference_data.csv" # Path to the reference data used by evidently for drift detection. 
+  report_path: "evidently_report.html" # Path to save the Evidently monitoring report
+  invoke_retraining: True # Whether to automatically invoke the retraining pipeline if performance degradation is detected during monitoring
+  force_retrain: False # Whether to force retrain the model even if no new data is found during monitoring. If True, it will retrain regardless of new data availability. If False, it will only retrain if new data is found.
+  ignore_no_new_data: False # Whether to ignore the absence of new data when deciding to retrain the model during monitoring. If True, it will proceed with retraining even if no new data is found. If False, it will skip retraining if no new data is available.
+
+dag:
+  owner: "klipiec" # Owner of the Airflow DAG
+  retries: 1 # Number of retries for failed tasks in the DAG
+  retry_delay: 5 # Delay between retries for failed tasks (in minutes)
+  dag_id: "volatility_retraining_pipeline" # Unique identifier for the Airflow DAG
+  description: "Weekly retraining and deployment pipeline" # Description of the DAG's purpose
+  catchup: False # Whether the DAG should perform catchup runs for past scheduled intervals when it is first deployed. Setting to False means it will only run from the current time onward.
+  tags: ["retraining", "deployment"] # Tags for categorizing the DAG in the Airflow UI
+
+# UI configuration
+ui:
+  color_map: {
+    'Low': 'green',
+    'Normal': 'orange',
+    'High': 'red'
+  } # Color mapping for volatility classes in the UI
+  min_days_to_predict: 30 # Minimum number of days in the selected date range to perform evaluation in the UI. 

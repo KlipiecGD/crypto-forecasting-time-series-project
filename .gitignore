@@ -1,0 +1,39 @@
+# --- Environment ---
+.env
+venv/
+
+# --- Python ---
+__pycache__/
+.ipynb_checkpoints/
+*.pkl
+.ruff_cache/
+
+# --- Airflow ---
+airflow/
+airflow.*
+logs/
+simple_auth_manager_passwords.json.generated
+
+# --- Project-specific ---
+images/
+theory/
+data/bitcoin_data_processed.csv
+data/reference_data.csv
+models/
+volatility_models/
+
+# --- Deployment artifacts ---
+deployment_info.json
+docker_image_uri.json
+elasticbeanstalk_info.json
+
+# --- Mlflow ---
+mlruns/
+mlflow.db
+
+# --- Archives ---
+*.tar.gz
+
+# --- OS ---
+.DS_Store
+
