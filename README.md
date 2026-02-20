@@ -213,7 +213,7 @@ Should return all 4 vars: `SAGEMAKER_ENDPOINT_NAME`, `AWS_DEFAULT_REGION`, `CLOU
 ### Test SageMaker endpoint directly
 
 ```bash
-python -m src.sagemaker_deployment.test_endpoint
+python -m src.sagemaker_deployment.verify_endpoint
 ```
 
 ---
