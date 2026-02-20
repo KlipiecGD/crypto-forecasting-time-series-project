@@ -251,6 +251,15 @@ def create_app_version(eb_client: Any, s3_key: str) -> str:
 def deploy_or_update_environment(
     eb_client: Any, version_label: str, endpoint_name: str
 ) -> str:
+    """
+    Deploy a new environment or update existing one with the new version.
+    Args:
+        eb_client: The boto3 Elastic Beanstalk client.
+        version_label (str): The version label to deploy.
+        endpoint_name (str): The name of the SageMaker endpoint to connect to.
+    Returns:
+        str: The name of the deployed environment.
+    """
 
     option_settings = [
         {
